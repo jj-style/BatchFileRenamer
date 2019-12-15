@@ -1,4 +1,4 @@
-import sys, os, string
+import sys, os, string, re
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
@@ -31,19 +31,19 @@ class App(QWidget):
         self.videos = QCheckBox("&Videos")
         self.audio = QCheckBox("&Audio")
 
-        self.new_name_label = QLabel("&Filename template")
-        self.new_name = QLineEdit()
-        self.new_name_label.setBuddy(self.new_name)
+        self.custom = QCheckBox("&Other extensions")
+        self.custom_extensions = QLineEdit(self)
+        self.custom_extensions.setEnabled(False)
+        self.custom_extensions.setToolTip("Comma delimited extensions")
 
-        self.l_unique_separator = QLabel("&Separator")
+        self.new_name = QLineEdit(self)
+        self.new_name.setToolTip("General name for all files")
+
         self.unique_separator = QComboBox(self)
         self.unique_separator.addItems(list(self.sep_dict.keys()))
-        self.l_unique_separator.setBuddy(self.unique_separator)
 
-        self.l_unique_enum = QLabel("&Enumerator")
         self.unique_enumerator = QComboBox(self)
         self.unique_enumerator.addItems(list(self.enum_dict.keys()))
-        self.l_unique_enum.setBuddy(self.unique_enumerator)
 
         self.paranthesize_enum = QCheckBox("&Paranthesize enumerator")
 
@@ -71,9 +71,10 @@ class App(QWidget):
         main.addLayout(filetype_layout)
 
         form = QFormLayout()
-        form.addRow(self.new_name_label, self.new_name)
-        form.addRow(self.l_unique_separator, self.unique_separator)
-        form.addRow(self.l_unique_enum, self.unique_enumerator)
+        form.addRow(self.custom, self.custom_extensions)
+        form.addRow("&Filename template", self.new_name)
+        form.addRow("&Separator", self.unique_separator)
+        form.addRow("&Enumerator", self.unique_enumerator)
         form.addWidget(self.paranthesize_enum)
         main.addLayout(form)
 
@@ -90,6 +91,8 @@ class App(QWidget):
     def makeConnections(self):
         self.folder_button.clicked.connect(self.folder_dialog.show)
         self.folder_dialog.directoryEntered.connect(self.selected_folder.setText)
+
+        self.custom.stateChanged.connect(self.custom_extensions.setEnabled)
 
         self.new_name.textChanged.connect(self.update_example)
         self.unique_separator.currentIndexChanged.connect(self.update_example)
@@ -114,6 +117,12 @@ class App(QWidget):
         exts += (x for x in IMG_EXT if self.images.checkState())
         exts += (x for x in VID_EXT if self.videos.checkState())
         exts += (x for x in AUD_EXT if self.audio.checkState())
+        if self.custom.checkState():
+            custom_extensions = self.custom_extensions.text().split(",")
+            custom_extensions = [x for x in custom_extensions if x]
+            custom_extensions = [re.sub("[^a-z]","", x.lower()) for x in custom_extensions]
+            exts += custom_extensions
+            exts = set(exts)
         try:
             count = 0
             for file in os.listdir(self.selected_folder.text()):
