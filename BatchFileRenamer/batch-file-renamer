@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import sys, os, string, re, itertools
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -7,7 +8,7 @@ VID_EXT = set(["mp4","mov","avi","mkv","flv","m4v","mpg","mpeg","wmv"])
 AUD_EXT = set(["mp3","ogg","wav","wma","m4a"])
 
 class App(QWidget):
-    def __init__(self, width=400, height=350):
+    def __init__(self, path, width=400, height=350):
         super().__init__()
         self.setWindowTitle('Batch Renamer')
         self.setFixedSize(width, height)
@@ -15,17 +16,17 @@ class App(QWidget):
         self.sep_dict = {"underscore":"_", "hyphen":"-", "period":".", "space":" "}
         self.enum_dict = {"numbers":"1", "letters":"a"}
 
-        self.createWidgets()
+        self.createWidgets(path)
         self.arrangeWidgets()
         self.makeConnections()
 
-    def createWidgets(self):
+    def createWidgets(self, path):
         # creates all the widgets used in the application
 
         # widgets to popup folder browser dialog
         self.selected_folder = QLabel(self)
         self.folder_dialog = QFileDialog(self)
-        self.folder_dialog.setDirectory(os.getenv('HOME'))
+        self.folder_dialog.setDirectory(path)
         self.folder_dialog.setFileMode(QFileDialog.Directory)
         self.folder_button = QPushButton("&Choose Folder")
 
@@ -197,6 +198,9 @@ class App(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = App()
+    if len(sys.argv) > 1 and os.path.isdir(sys.argv[1]):    
+            window = App(sys.argv[1])
+    else:
+        window = App(os.getenv('HOME'))
     window.show()
     sys.exit(app.exec_())
